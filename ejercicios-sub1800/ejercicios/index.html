@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ejercicios</title>
+    <link rel="stylesheet" href="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.css">
+    <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/main.css">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.14.0/js/all.min.js"></script>
+</head>
+<body class="bg-light">
+
+    <div class="container   bg-light p-5">
+
+
+        <div class="row">
+            <div class="col-lg-3 md-3 sm-12"></div>
+            <!-- tablero -->
+            <div class="col-lg-6 md-6 sm-12 mx-auto" style="margin-top: 5%;"> 
+            <div id="board" class="img-fluid" ></div>
+            <div id="inco" class="bg-danger p-1 text-light text-center my-2 rounded"></div> 
+
+            <div class="bg-primary p-1 mb-2 rounded">
+            <h4 id="consigna" class="text-center my-2 text-light"></h4>
+            </div>
+
+            <div class="bg-dark text-center text-light rounded p-2"
+                 style="font-size:1.6em;"
+                 id="TimpodeExpiracion">
+            </div>
+
+            <div class="float-right mt-1 ">
+                <i onclick="quit()" class="fas fa-door-open fa-2x quit"></i>
+                <i onclick="saltearEjercicio()" class="fas fa-arrow-alt-circle-right fa-2x next-exercise"></i>
+            </div>
+
+                
+            </div> 
+            <div class="col-lg-3 md-3 sm-12"></div>
+  
+  
+                </div>
+
+
+    </div>
+
+    <script src="https://code.jquery.com/jquery-3.5.1.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" ></script>
+    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" ></script>
+    <script src="https://unpkg.com/@chrisoakman/chessboardjs@1.0.0/dist/chessboard-1.0.0.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@9"></script>
+    <script src="js/countDown.js"></script>
+
+    <script>
+
+ 
+
+var onChange = function(oldPos, newPos) {
+
+        let newMove = ChessBoard.objToFen(newPos);
+
+        console.log(newMove);
+        let nextMove = positions.ejercicios[location.search.replace("?", "")].jugadas[jugadaActual + 1];
+
+        if(newMove == nextMove.value ){
+
+            audioMove.play();
+
+            if(nextMove.last){
+                Swal.fire('Correcto!','Ejercicio resuelto correctamente!','success');
+
+                $.ajax({
+                    type: "POST",
+                    url: "../api/registrarHora.php",
+                    data: {idUser:localStorage.getItem("idUser"),
+                     nroejercicio: location.search.replace('?',''),
+                     segundos: localStorage.getItem('contadorDeSegundos') },
+                    dataType: "JSON",
+                    success: function (res) {
+
+                        if(!res.result){
+                            return false;
+                        }
+
+                        
+                    }
+                });
+
+
+                
+                if(location.search.replace('?','') != 20){
+                    
+                    setTimeout(function(){
+                        localStorage.setItem('contadorDeSegundos', null); // reseteamos los segundo a cero
+                        jugadaActual = 0;//reseteamos la jugada actual
+                        location.search = parseInt(location.search.replace("?", "")) + 1; //agregamos uno al parametro GET
+                        runExercises();
+    
+                    },1400)
+    
+                    }else{
+
+                        audioWIN.play();
+
+                        Swal.fire({
+                        title: 'Felicidades!',
+                        text: "Has completado los ejercicios!",
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Salir'
+                        }).then((result) => {
+                        if (result.value) {
+
+                            localStorage.clear();
+                            location.replace('../index.html');
+
+
+                        }
+                        });
+
+                        $.ajax({
+                            type: "POST",
+                            url: "../api/registrarHoraFin.php",
+                            data: {idUser:localStorage.getItem("idUser")},
+                            dataType: "JSON",
+                            success: function (response) {
+                                
+                            }
+                        });
+
+                    }
+
+
+            }else{
+
+                jugadaActual = jugadaActual + 2;
+                setTimeout(function(){
+                    cfg.position = positions.ejercicios[location.search.replace("?", "")].jugadas[jugadaActual].value;
+                    ChessBoard('board', cfg);
+                    audioMovePC.play();
+                },900)
+
+/*              jugadaActual = jugadaActual + 2;
+                ChessBoard('board', cfg); */
+
+            }
+            
+           // setTimeout( ()=>{ board.position('8/5pk1/8/4p3/pp2Pn2/5P2/PP2B3/2Q3K1', true); },490 ) ;
+
+        }else{
+        /*     audio.play();
+            ChessBoard('board', cfg); */
+
+            Swal.fire('Incorrecto!','Cargando próximo ejercicio!','error');
+
+            
+            if(location.search.replace('?','') != 20){
+                    
+                    setTimeout(function(){
+                        localStorage.setItem('contadorDeSegundos', null); // reseteamos los segundo a cero
+                        jugadaActual = 0;//reseteamos la jugada actual
+                        location.search = parseInt(location.search.replace("?", "")) + 1; //agregamos uno al parametro GET
+                        runExercises();
+    
+                    },1400)
+    
+                    }else{
+
+                        audioWIN.play();
+
+                        Swal.fire({
+                        title: 'Felicidades!',
+                        text: "Has completado los ejercicios!",
+                        icon: 'success',
+                        showCancelButton: true,
+                        confirmButtonColor: '#3085d6',
+                        cancelButtonColor: '#d33',
+                        confirmButtonText: 'Salir'
+                        }).then((result) => {
+                        if (result.value) {
+
+                            localStorage.clear();
+                            location.replace('../index.html');
+
+
+                        }
+                        });
+
+                        $.ajax({
+                            type: "POST",
+                            url: "../api/registrarHoraFin.php",
+                            data: {idUser:localStorage.getItem("idUser")},
+                            dataType: "JSON",
+                            success: function (response) {
+                                
+                            }
+                        });
+
+                    }
+        }
+    }
+
+        
+    $(document).ready(function(){
+
+        runExercises();
+        add90Minutes();
+        contadorDeSegundos();
+
+    });
+
+
+    function runExercises(){
+
+        if(location.search == ''){ // es lepremiere
+
+            location.search = 1;
+
+        }
+
+        
+        if(location.search.replace("?", "") == 20){ // es lepremiere
+
+            $('.next-exercise').css('display','none');
+
+        }
+
+        if(positions.ejercicios[location.search.replace("?", "")].orientation == 'white'){
+            $color = 'blancas';
+        }else{
+            $color = 'negras';
+        }
+
+       $('#consigna').html(positions.ejercicios[location.search.replace("?", "")].consigna + ' <br><span style="color:'+positions.ejercicios[location.search.replace("?", "")].orientation+'"> Juegan ' + $color + '</span>'); 
+
+       ChessBoard('board', cfg);
+
+    }
+
+    function saltearEjercicio(){
+
+        Swal.fire({
+        title: 'Estas seguro que quieres cambiar de ejercicio?',
+        text: "No podrás volver atrás a completarlo!",
+        icon: 'warning',
+        showCancelButton: true,
+        confirmButtonColor: '#3085d6',
+        cancelButtonColor: '#d33',
+        confirmButtonText: 'Si'
+        }).then((result) => {
+        if (result.value) {
+
+            localStorage.setItem('contadorDeSegundos', null); // reseteamos los segundo a cero
+                        jugadaActual = 0;//reseteamos la jugada actual
+                        location.search = parseInt(location.search.replace("?", "")) + 1; //agregamos uno al parametro GET
+                        runExercises();
+        }
+        })
+
+    }
+
+    function quit(){
+
+    Swal.fire({
+    title: 'Estas seguro que deseas abandonar?',
+    text: "No podrás volver a entrar para completarlo!",
+    icon: 'warning',
+    showCancelButton: true,
+    confirmButtonColor: '#3085d6',
+    cancelButtonColor: '#d33',
+    confirmButtonText: 'Si'
+    }).then((result) => {
+    if (result.value) {
+
+        localStorage.clear();
+        location.replace('../index.html');
+
+
+    }
+    });
+
+}
+  
+    </script>
+        <script src="positions/positions.js?ver=2.1"></script>
+        <script src="js/configuration.js"></script>
+</body>
+</html>
